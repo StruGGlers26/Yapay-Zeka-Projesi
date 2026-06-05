@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+data/rutin.db
+data/.secret
+data/history.json
+.env

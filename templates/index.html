@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Rutin — Değerlendirme</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/vendor/chart.umd.min.js') }}"></script>
+</head>
+<body>
+  <!-- Giriş ekranı -->
+  <div class="auth-screen" id="auth_screen">
+    <div class="auth-card">
+      <div class="auth-brand">⏱ Rutin</div>
+      <p class="auth-tagline">Rutininizi kaydedin, küçük değişikliklerle güncelleyin, kişisel değerlendirme alın.</p>
+
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" data-auth-tab="login">Giriş</button>
+        <button type="button" class="auth-tab" data-auth-tab="register">Kayıt ol</button>
+      </div>
+
+      <form id="login_form" class="auth-form">
+        <label class="field">
+          <span>Kullanıcı adı</span>
+          <input type="text" id="login_username" autocomplete="username" required minlength="3">
+        </label>
+        <label class="field">
+          <span>Şifre</span>
+          <input type="password" id="login_password" autocomplete="current-password" required minlength="4">
+        </label>
+        <button type="submit" class="btn-primary auth-submit">Giriş yap</button>
+      </form>
+
+      <form id="register_form" class="auth-form" hidden>
+        <label class="field">
+          <span>Kullanıcı adı</span>
+          <input type="text" id="reg_username" autocomplete="username" required minlength="3">
+        </label>
+        <label class="field">
+          <span>Görünen ad (isteğe bağlı)</span>
+          <input type="text" id="reg_display_name" autocomplete="name">
+        </label>
+        <label class="field">
+          <span>Şifre</span>
+          <input type="password" id="reg_password" autocomplete="new-password" required minlength="4">
+        </label>
+        <button type="submit" class="btn-primary auth-submit">Hesap oluştur</button>
+      </form>
+      <p class="auth-error" id="auth_error" hidden></p>
+    </div>
+  </div>
+
+  <div class="app-shell" id="app_shell">
+    <header class="app-bar">
+      <div class="app-bar-inner">
+        <div class="brand">
+          <span class="brand-icon" aria-hidden="true">⏱</span>
+          <div>
+            <h1>Rutin</h1>
+            <p class="brand-sub">Değerlendirme &amp; öneri</p>
+          </div>
+        </div>
+        <div class="app-bar-actions">
+          <div class="score-chip" id="score_chip" hidden>
+            <span class="score-chip-main" id="score_chip_value">—</span>
+            <span class="score-chip-sub" id="score_chip_context"></span>
+          </div>
+          <button type="button" class="user-menu-btn" id="btn_user_menu" title="Hesap">
+            <span id="user_avatar">?</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="period-switch" role="tablist">
+      <button type="button" class="period-btn active" data-period="günlük" role="tab" aria-selected="true">Günlük</button>
+      <button type="button" class="period-btn" data-period="haftalık" role="tab" aria-selected="false">Haftalık</button>
+    </div>
+
+  <main class="main-content">
+      <!-- Sekme: Program -->
+      <section class="tab-panel active" id="panel_schedule" data-tab="schedule">
+        <div class="day-header">
+          <span class="day-label" id="day_label">Bugünün programı</span>
+          <div class="header-actions">
+            <button type="button" class="icon-btn" id="btn_copy_day" title="Gün programını kopyala" hidden>📑</button>
+            <button type="button" class="icon-btn" id="btn_sample" title="Örnek yükle">📋</button>
+            <button type="button" class="icon-btn" id="btn_clear" title="Seçili günün programını temizle">🗑</button>
+          </div>
+        </div>
+
+        <div class="week-days" id="week_days" hidden role="tablist" aria-label="Haftanın günleri"></div>
+
+        <div class="conflict-banner" id="conflict_banner" hidden></div>
+
+        <div class="timeline-wrap" id="timeline_wrap">
+          <div class="timeline-ruler" id="timeline_ruler"></div>
+          <div class="timeline-blocks" id="timeline_blocks"></div>
+        </div>
+
+        <p class="empty-hint" id="empty_hint">Henüz aktivite yok. + ile ekleyin veya örnek yükleyin.</p>
+        <p class="period-hint" id="period_hint">Üstten gün seçin; seçili günün programı toplam 24 saat olmalı. Girilen günler haftalık modda da görünür.</p>
+
+        <ul class="activity-cards" id="activity_cards"></ul>
+      </section>
+
+      <!-- Sekme: İstatistik -->
+      <section class="tab-panel" id="panel_stats" data-tab="stats">
+        <div class="stats-placeholder" id="stats_placeholder">
+          <div class="placeholder-ring"></div>
+          <p id="stats_placeholder_msg">Önce programınızı oluşturup <strong>Değerlendir</strong>’e basın.</p>
+        </div>
+        <div class="stats-content" id="stats_content" hidden>
+          <div class="score-card">
+            <div class="score-ring" id="score_ring">
+              <svg viewBox="0 0 120 120">
+                <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                <circle class="ring-fill" id="ring_fill" cx="60" cy="60" r="52"/>
+              </svg>
+              <div class="score-center">
+                <span class="score-value" id="score_value">0</span>
+                <span class="score-max">/100</span>
+              </div>
+            </div>
+            <p class="summary" id="summary_text"></p>
+          </div>
+          <div class="chart-card">
+            <h3>Zaman dağılımı</h3>
+            <canvas id="category_chart"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Şablon benzerliği</h3>
+            <canvas id="similarity_chart"></canvas>
+          </div>
+          <div class="legend-grid" id="category_legend"></div>
+        </div>
+      </section>
+
+      <!-- Sekme: Öneriler -->
+      <section class="tab-panel" id="panel_insights" data-tab="insights">
+        <div class="insights-placeholder" id="insights_placeholder">
+          <p id="insights_placeholder_msg">Değerlendirme sonrası uzman sistemi uyarıları ve öneriler burada görünür.</p>
+        </div>
+        <div class="insights-content" id="insights_content" hidden>
+          <h3 class="section-title">Uzman sistemi</h3>
+          <ul class="rule-list" id="rules_list"></ul>
+          <h3 class="section-title">İyileştirme önerileri</h3>
+          <ol class="rec-list" id="recommendations_list"></ol>
+          <details class="methods-box">
+            <summary>Kural eşikleri (kaynaklar)</summary>
+            <ul id="thresholds_list"></ul>
+          </details>
+          <details class="methods-box">
+            <summary>Yapay zeka yöntemleri</summary>
+            <ul id="methods_list"></ul>
+          </details>
+        </div>
+      </section>
+
+      <!-- Sekme: Geçmiş -->
+      <section class="tab-panel" id="panel_history" data-tab="history">
+        <h3 class="section-title">Son değerlendirmeler</h3>
+        <ul id="history_list" class="history-list">
+          <li class="muted">Henüz kayıt yok.</li>
+        </ul>
+      </section>
+    </main>
+
+    <button type="button" class="fab" id="fab_add" aria-label="Aktivite ekle">+</button>
+
+    <nav class="bottom-nav" aria-label="Ana menü">
+      <button type="button" class="nav-item active" data-tab="schedule">
+        <span class="nav-icon">📅</span>
+        <span>Program</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="stats">
+        <span class="nav-icon">📊</span>
+        <span>İstatistik</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="insights">
+        <span class="nav-icon">💡</span>
+        <span>Öneriler</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="history">
+        <span class="nav-icon">🕐</span>
+        <span>Geçmiş</span>
+      </button>
+    </nav>
+
+    <div class="evaluate-bar">
+      <button type="button" class="btn-evaluate" id="btn_evaluate">Değerlendir</button>
+    </div>
+  </div>
+
+  <!-- Aktivite ekleme / düzenleme -->
+  <div class="modal-backdrop" id="modal_backdrop" hidden>
+    <div class="modal-sheet" role="dialog" aria-labelledby="modal_title">
+      <div class="modal-handle"></div>
+      <h2 id="modal_title">Aktivite ekle</h2>
+      <p class="modal-day-label" id="modal_day_label" hidden></p>
+      <form id="activity_form">
+        <input type="hidden" id="edit_id" value="">
+        <label class="field">
+          <span>Aktivite adı</span>
+          <input type="text" id="input_name" required placeholder="Örn. Ders çalışma">
+        </label>
+        <div class="time-range-row">
+          <label class="field">
+            <span>Başlangıç</span>
+            <input type="time" id="input_start" value="08:00" required>
+          </label>
+          <label class="field">
+            <span>Bitiş</span>
+            <input type="time" id="input_end" value="09:00" required>
+          </label>
+        </div>
+        <p class="duration-preview" id="duration_preview">Süre: 1 saat</p>
+        <label class="field">
+          <span>Kategori</span>
+          <select id="input_category" required>
+            <option value="" disabled selected>Kategori seçin</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn-text" id="btn_modal_cancel">İptal</button>
+          <button type="submit" class="btn-primary">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="user-menu-backdrop" id="user_menu_backdrop" hidden>
+    <div class="user-menu-sheet">
+      <p class="user-menu-name" id="user_menu_name">—</p>
+      <p class="user-menu-hint">Rutin, Değerlendir’e bastığınızda kaydedilir.</p>
+      <button type="button" class="btn-text" id="btn_theme_toggle">☀️</button>
+      <button type="button" class="btn-text danger" id="btn_logout">Çıkış yap</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="copy_day_backdrop" hidden>
+    <div class="modal-sheet" role="dialog" aria-labelledby="copy_day_title">
+      <div class="modal-handle"></div>
+      <h2 id="copy_day_title">Gün programını kopyala</h2>
+      <label class="field">
+        <span>Kaynak gün</span>
+        <select id="copy_source_day"></select>
+      </label>
+      <fieldset class="copy-target-fieldset">
+        <legend>Hedef günler</legend>
+        <div class="copy-target-days" id="copy_target_days"></div>
+      </fieldset>
+      <div class="modal-actions">
+        <button type="button" class="btn-text" id="btn_copy_cancel">İptal</button>
+        <button type="button" class="btn-primary" id="btn_copy_confirm">Kopyala</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="confirm_backdrop" hidden>
+    <div class="modal-sheet confirm-sheet" role="alertdialog" aria-labelledby="confirm_title" aria-describedby="confirm_message">
+      <div class="modal-handle"></div>
+      <p class="confirm-icon" id="confirm_icon" aria-hidden="true">🗑</p>
+      <h2 id="confirm_title">Onay</h2>
+      <p class="confirm-message" id="confirm_message"></p>
+      <p class="confirm-hint" id="confirm_hint"></p>
+      <div class="modal-actions confirm-actions">
+        <button type="button" class="btn-text" id="btn_confirm_cancel">İptal</button>
+        <button type="button" class="btn-primary" id="btn_confirm_ok">Onayla</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="history_detail_backdrop" hidden>
+    <div class="modal-sheet history-detail-sheet">
+      <h2 id="history_detail_title">Geçmiş</h2>
+      <p id="history_detail_summary"></p>
+      <h3 class="section-title">Öneriler</h3>
+      <ol id="history_detail_recs"></ol>
+      <button type="button" class="btn-primary" id="btn_history_close">Kapat</button>
+    </div>
+  </div>
+
+  <textarea id="routine_text" hidden aria-hidden="true"></textarea>
+  <input type="hidden" id="period" value="günlük">
+  <input type="hidden" id="default_hours" value="1">
+
+  <script>
+    window.CATEGORIES = {{ categories | tojson }};
+  </script>
+  <script src="{{ url_for('static', filename='js/config.js') }}?v=6"></script>
+  <script src="{{ url_for('static', filename='js/utils.js') }}?v=5"></script>
+  <script src="{{ url_for('static', filename='js/conflicts.js') }}?v=5"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}?v=6"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=33"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}?v=3"></script>
+</body>
+</html>
